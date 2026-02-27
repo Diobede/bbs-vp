@@ -38,7 +38,6 @@ public class BBSSettings
     public static ValueBoolean uniformScale;
     public static ValueBoolean clickSound;
     public static ValueBoolean gizmos;
-    public static ValueFloat cameraEditorExportBandsOpacity;
 
     public static ValueBoolean enableCursorRendering;
     public static ValueBoolean enableMouseButtonRendering;
@@ -87,6 +86,7 @@ public class BBSSettings
     public static ValueBoolean editorHorizontalClipEditorFollowsLayout;
     public static ValueBoolean editorMinutesBackup;
     public static ValueInt editorTrackWidth;
+    public static ValueBoolean editorPreviewAutoSize;
     public static ValueFloat editorPreviewResolutionScale;
 
     public static ValueFloat recordingCountdown;
@@ -185,7 +185,6 @@ public class BBSSettings
         uniformScale = builder.getBoolean("uniform_scale", false);
         clickSound = builder.getBoolean("click_sound", false);
         gizmos = builder.getBoolean("gizmos", true);
-        cameraEditorExportBandsOpacity = builder.getFloat("camera_editor_export_bands_opacity", 0.5F, 0F, 1F);
         editorTrackWidth = builder.getInt("track_width", 2, 1, 10);
         favoriteColors = new ValueColors("favorite_colors");
         customFilters = new ValueCustomFilters("custom_filters");
@@ -249,6 +248,7 @@ public class BBSSettings
         editorHorizontalClipEditor = builder.getBoolean("horizontal_clip_editor", true);
         editorHorizontalClipEditorFollowsLayout = builder.getBoolean("horizontal_clip_editor_follows_layout", true);
         editorMinutesBackup = builder.getBoolean("minutes_backup", true);
+        editorPreviewAutoSize = builder.getBoolean("preview_auto_size", true);
         editorPreviewResolutionScale = builder.getFloat("preview_resolution_scale", 2F, 1F, 3F);
 
         builder.category("recording");
