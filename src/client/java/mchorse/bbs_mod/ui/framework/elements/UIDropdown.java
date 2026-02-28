@@ -4,9 +4,12 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.ui.utils.Scroll;
+import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIConstants;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.ArrayList;
@@ -44,6 +47,9 @@ public class UIDropdown extends UIElement
     private Consumer<Set<String>> callback;
     private boolean singleSelect = false;
 
+    private Scroll scroll;
+    private int maxVisibleOptions = 5;
+
     public static final int HEADER_HEIGHT = 20;
     public static final int OPTION_HEIGHT = 20;
 
@@ -54,6 +60,16 @@ public class UIDropdown extends UIElement
         this.title = title;
         this.callback = callback;
         this.h(HEADER_HEIGHT);
+
+        this.scroll = new Scroll(new Area());
+        this.scroll.scrollItemSize = OPTION_HEIGHT;
+        this.scroll.scrollSpeed = OPTION_HEIGHT;
+    }
+
+    public UIDropdown maxVisibleOptions(int max)
+    {
+        this.maxVisibleOptions = max;
+        return this;
     }
 
     public UIDropdown addOption(String id, Icon icon, IKey label)
@@ -108,7 +124,10 @@ public class UIDropdown extends UIElement
 
         if (this.expanded)
         {
-            height += this.options.size() * OPTION_HEIGHT;
+            int optionsHeight = this.options.size() * OPTION_HEIGHT;
+            int maxOptionsHeight = this.maxVisibleOptions * OPTION_HEIGHT;
+            
+            height += Math.min(optionsHeight, maxOptionsHeight);
         }
 
         this.h(height);
@@ -136,6 +155,7 @@ public class UIDropdown extends UIElement
         {
             this.expanded = !this.expanded;
             this.updateHeight();
+            this.scroll.scrollTo(0); // Reset scroll on toggle
 
             return true;
         }
@@ -143,47 +163,88 @@ public class UIDropdown extends UIElement
         // Click on option
         if (this.expanded)
         {
-            int optionIndex = (relativeY - HEADER_HEIGHT) / OPTION_HEIGHT;
+            if (this.scroll.mouseClicked(context))
+            {
+                return true;
+            }
+
+            int scrollY = (int) this.scroll.getScroll();
+            int optionIndex = (relativeY - HEADER_HEIGHT + scrollY) / OPTION_HEIGHT;
 
             if (optionIndex >= 0 && optionIndex < this.options.size())
             {
-                Option option = this.options.get(optionIndex);
+                // Check if click is within the visible area (excluding scrollbar if needed, but simple check is enough for now)
+                int maxVisibleHeight = this.maxVisibleOptions * OPTION_HEIGHT;
+                if (relativeY - HEADER_HEIGHT < maxVisibleHeight)
+                {
+                    Option option = this.options.get(optionIndex);
 
-                if (this.singleSelect)
-                {
-                    this.selected.clear();
-                    this.selected.add(option.id);
-                    this.expanded = false;
-                    this.updateHeight();
-                }
-                else
-                {
-                    if (this.selected.contains(option.id))
+                    if (this.singleSelect)
                     {
-                        this.selected.remove(option.id);
+                        this.selected.clear();
+                        this.selected.add(option.id);
+                        this.expanded = false;
+                        this.updateHeight();
                     }
                     else
                     {
-                        this.selected.add(option.id);
+                        if (this.selected.contains(option.id))
+                        {
+                            this.selected.remove(option.id);
+                        }
+                        else
+                        {
+                            this.selected.add(option.id);
+                        }
                     }
-                }
 
-                if (this.callback != null)
-                {
-                    this.callback.accept(this.getSelected());
-                }
+                    if (this.callback != null)
+                    {
+                        this.callback.accept(this.getSelected());
+                    }
 
-                return true;
+                    return true;
+                }
             }
         }
 
         return super.subMouseClicked(context);
+    }
+    
+    @Override
+    public boolean subMouseScrolled(UIContext context)
+    {
+        if (this.expanded && this.scroll.mouseScroll(context))
+        {
+            return true;
+        }
+        
+        return super.subMouseScrolled(context);
+    }
+
+    @Override
+    public boolean subMouseReleased(UIContext context)
+    {
+        this.scroll.mouseReleased(context);
+        return super.subMouseReleased(context);
     }
 
     @Override
     public void render(UIContext context)
     {
         FontRenderer font = context.batcher.getFont();
+
+        // Update scroll bounds
+        int optionsHeight = this.options.size() * OPTION_HEIGHT;
+        int maxOptionsHeight = this.maxVisibleOptions * OPTION_HEIGHT;
+        int visibleHeight = Math.min(optionsHeight, maxOptionsHeight);
+        
+        this.scroll.area.copy(this.area);
+        this.scroll.area.y += HEADER_HEIGHT;
+        this.scroll.area.h = visibleHeight;
+        this.scroll.setSize(this.options.size());
+        this.scroll.clamp();
+        this.scroll.drag(context);
 
         // Render header (Textbox style)
         int h = HEADER_HEIGHT;
@@ -205,6 +266,7 @@ public class UIDropdown extends UIElement
 
         // Render title
         String titleText = this.title.get();
+        Icon selectedIcon = null;
 
         if (this.singleSelect && !this.selected.isEmpty())
         {
@@ -215,30 +277,56 @@ public class UIDropdown extends UIElement
                 if (option.id.equals(id))
                 {
                     titleText = option.label.get();
+                    selectedIcon = option.icon;
                     break;
                 }
             }
         }
 
+        int textX = x + 4;
+
+        if (selectedIcon != null)
+        {
+            context.batcher.icon(selectedIcon, x + 4, y + 2, 0F, 0F);
+            textX += 20;
+        }
+
         int textY = y + (h - font.getHeight()) / 2;
-        context.batcher.text(titleText, x + 4, textY, Colors.WHITE);
+        context.batcher.text(titleText, textX, textY, Colors.WHITE);
 
         // Render options if expanded
         if (this.expanded)
         {
             // Background for options
-            int totalOptionsHeight = this.options.size() * OPTION_HEIGHT;
-            context.batcher.box(x, y + h, x + w, y + h + totalOptionsHeight, 0xff000000);
+            context.batcher.box(x, y + h, x + w, y + h + visibleHeight, 0xff000000);
 
             // Border for options
-            context.batcher.outline(x, y + h, x + w, y + h + totalOptionsHeight, borderColor);
+            context.batcher.outline(x, y + h, x + w, y + h + visibleHeight, borderColor);
+            
+            // Clip options area
+            context.batcher.clip(this.scroll.area, context);
+            
+            int scrollY = (int) this.scroll.getScroll();
 
             for (int i = 0; i < this.options.size(); i++)
             {
                 Option option = this.options.get(i);
-                int optionY = y + h + i * OPTION_HEIGHT;
+                int optionY = y + h + i * OPTION_HEIGHT - scrollY;
+                
+                // Optimization: Skip rendering if out of view
+                if (optionY + OPTION_HEIGHT < y + h || optionY > y + h + visibleHeight)
+                {
+                    continue;
+                }
+                
                 boolean isSelected = this.selected.contains(option.id);
                 boolean isHovered = this.area.isInside(context) && context.mouseY >= optionY && context.mouseY < optionY + OPTION_HEIGHT;
+                
+                // Adjust hover check for scrolling area
+                if (context.mouseY < y + h || context.mouseY >= y + h + visibleHeight)
+                {
+                    isHovered = false;
+                }
 
                 // Render option background
                 int bgColor = 0;
@@ -279,6 +367,10 @@ public class UIDropdown extends UIElement
                 String label = option.label.get();
                 context.batcher.text(label, x + 48, optionY + 6, Colors.WHITE, true);
             }
+            
+            context.batcher.unclip(context);
+            
+            this.scroll.renderScrollbar(context.batcher);
         }
 
         super.render(context);

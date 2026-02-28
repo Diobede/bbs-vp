@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class UIFormCategory extends UIElement
 {
@@ -45,9 +46,18 @@ public class UIFormCategory extends UIElement
     public FormCategory category;
     public Form selected;
 
+    public boolean selectionMode;
+    public boolean isSelected;
+    public Consumer<Boolean> onSelect;
+
     private int last;
     private String search = "";
     private List<Form> searched = new ArrayList<>();
+
+    public void setSelected(boolean selected)
+    {
+        this.isSelected = selected;
+    }
 
     public UIFormCategory(FormCategory category, UIFormList list)
     {
@@ -235,7 +245,21 @@ public class UIFormCategory extends UIElement
 
             if (y < 0)
             {
-                if (x < this.area.x + 30 + context.batcher.getFont().getWidth(this.category.title.get()))
+                if (this.selectionMode && x < 20)
+                {
+                    this.isSelected = !this.isSelected;
+                    
+                    if (this.onSelect != null)
+                    {
+                        this.onSelect.accept(this.isSelected);
+                    }
+                    
+                    return true;
+                }
+
+                int shift = this.selectionMode ? 20 : 0;
+
+                if (x < 30 + shift + context.batcher.getFont().getWidth(this.category.title.get()))
                 {
                     this.category.visible.set(!this.category.visible.get());
 
@@ -298,15 +322,22 @@ public class UIFormCategory extends UIElement
 
         super.render(context);
 
-        context.batcher.textCard(this.category.getProcessedTitle(), this.area.x + 26, this.area.y + 6);
+        int shift = this.selectionMode ? 20 : 0;
+
+        if (this.selectionMode)
+        {
+            context.batcher.icon(this.isSelected ? Icons.CHECKMARK : Icons.OUTLINE, this.area.x + 4, this.area.y + 4, 0F, 0F);
+        }
+
+        context.batcher.textCard(this.category.getProcessedTitle(), this.area.x + 26 + shift, this.area.y + 6);
 
         if (this.category.visible.get())
         {
-            context.batcher.icon(Icons.MOVE_DOWN, this.area.x + 16, this.area.y + 5, 0.5F, 0F);
+            context.batcher.icon(Icons.MOVE_DOWN, this.area.x + 16 + shift, this.area.y + 5, 0.5F, 0F);
         }
         else
         {
-            context.batcher.icon(Icons.MOVE_UP, this.area.x + 16, this.area.y + 4, 0.5F, 0F);
+            context.batcher.icon(Icons.MOVE_UP, this.area.x + 16 + shift, this.area.y + 4, 0.5F, 0F);
         }
 
         List<Form> forms = this.getForms();

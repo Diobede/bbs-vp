@@ -8,6 +8,7 @@ import mchorse.bbs_mod.settings.values.numeric.ValueBoolean;
 import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
 import mchorse.bbs_mod.settings.values.numeric.ValueInt;
 import mchorse.bbs_mod.settings.values.ui.ValueColors;
+import mchorse.bbs_mod.settings.values.ui.ValueCustomFilters;
 import mchorse.bbs_mod.settings.values.ui.ValueEditorLayout;
 import mchorse.bbs_mod.settings.values.ui.ValueLanguage;
 import mchorse.bbs_mod.settings.values.ui.ValueOnionSkin;
@@ -21,6 +22,7 @@ import java.util.HashSet;
 public class BBSSettings
 {
     public static ValueColors favoriteColors;
+    public static ValueCustomFilters customFilters;
     public static ValueStringKeys disabledSheets;
     public static ValueLanguage language;
     public static ValueInt primaryColor;
@@ -175,9 +177,11 @@ public class BBSSettings
         cameraEditorExportBandsOpacity = builder.getFloat("camera_editor_export_bands_opacity", 0.5F, 0F, 1F);
         editorTrackWidth = builder.getInt("track_width", 2, 1, 10);
         favoriteColors = new ValueColors("favorite_colors");
+        customFilters = new ValueCustomFilters("custom_filters");
         disabledSheets = new ValueStringKeys("disabled_sheets");
         disabledSheets.set(defaultFilters);
         builder.register(favoriteColors);
+        builder.register(customFilters);
         builder.register(disabledSheets);
 
         builder.category("tutorials");

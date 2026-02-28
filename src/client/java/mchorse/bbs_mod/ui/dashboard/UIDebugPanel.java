@@ -8,6 +8,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.UIDropdown;
+import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.PNGEncoder;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -16,6 +17,8 @@ import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 import mchorse.bbs_mod.utils.resources.Pixels;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UIDebugPanel extends UIDashboardPanel
 {
@@ -148,9 +151,15 @@ public class UIDebugPanel extends UIDashboardPanel
             System.out.println("Single selected: " + selected);
         });
         this.singleDropdown.singleSelect();
-        this.singleDropdown.addOption("s1", Icons.BLOCK, IKey.raw("Single 1"));
-        this.singleDropdown.addOption("s2", Icons.SPHERE, IKey.raw("Single 2"));
-        this.singleDropdown.addOption("s3", Icons.WRENCH, IKey.raw("Single 3"));
+        
+        List<String> keys = new ArrayList<>(Icons.ICONS.keySet());
+        keys.sort(String::compareTo);
+
+        for (String key : keys)
+        {
+            this.singleDropdown.addOption(key, Icons.ICONS.get(key), IKey.raw(key));
+        }
+        
         this.singleDropdown.relative(this).xy(270, 40).w(250);
 
         this.add(this.button);

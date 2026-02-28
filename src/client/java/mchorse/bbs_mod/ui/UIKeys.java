@@ -455,6 +455,12 @@ public class UIKeys
     public static final IKey FORMS_FILTER_PARTICLE = L10n.lang("bbs.ui.forms.filter.particle");
     public static final IKey FORMS_FILTER_EXTRA = L10n.lang("bbs.ui.forms.filter.extra");
     public static final IKey FORMS_FILTER_MOB = L10n.lang("bbs.ui.forms.filter.mob");
+    public static final IKey FORMS_FILTER_CUSTOM = L10n.lang("bbs.ui.forms.filter.custom");
+    public static final IKey FORMS_FILTER_NORMAL = L10n.lang("bbs.ui.forms.filter.normal");
+    public static final IKey FORMS_FILTER_CUSTOM_TITLE = L10n.lang("bbs.ui.forms.filter.custom.title");
+    public static final IKey FORMS_FILTER_NAME_PLACEHOLDER = L10n.lang("bbs.ui.forms.filter.name_placeholder");
+    public static final IKey FORMS_FILTER_ICON_LABEL = L10n.lang("bbs.ui.forms.filter.icon_label");
+    public static final IKey FORMS_FILTER_SELECT_CATEGORIES = L10n.lang("bbs.ui.forms.filter.select_categories");
     public static final IKey FORMS_LIST_FILTER_MODEL = L10n.lang("bbs.ui.forms.list.filter.model");
     public static final IKey FORMS_LIST_FILTER_PARTICLE = L10n.lang("bbs.ui.forms.list.filter.particle");
     public static final IKey FORMS_LIST_FILTER_EXTRA = L10n.lang("bbs.ui.forms.list.filter.extra");
@@ -464,6 +470,7 @@ public class UIKeys
     public static final IKey GENERAL_CLOSE = L10n.lang("bbs.ui.close");
     public static final IKey GENERAL_CONFIRM = L10n.lang("bbs.ui.confirm");
     public static final IKey GENERAL_COPY = L10n.lang("bbs.ui.copy");
+    public static final IKey GENERAL_DONE = L10n.lang("bbs.ui.done");
     public static final IKey GENERAL_DOWNLOAD = L10n.lang("bbs.ui.download");
     public static final IKey GENERAL_DUPE = L10n.lang("bbs.ui.dupe");
     public static final IKey GENERAL_EDIT = L10n.lang("bbs.ui.edit");

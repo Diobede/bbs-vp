@@ -33,13 +33,20 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.render.DiffuseLighting;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import mchorse.bbs_mod.settings.values.ui.ValueCustomFilter;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
+import mchorse.bbs_mod.ui.forms.UICustomFormListOverlayPanel.CustomFilterData;
 
 public class UIFormList extends UIElement
 {
     public enum FilterCategory
     {
-        ALL, MODEL, PARTICLE, EXTRA, MOB
+        ALL, MODEL, PARTICLE, EXTRA, MOB, CUSTOM
     }
 
     public IUIFormList palette;
@@ -51,11 +58,18 @@ public class UIFormList extends UIElement
     public UIIcon particleButton;
     public UIIcon extraButton;
     public UIIcon mobButton;
+    public UIIcon customButton;
+    public List<UIIcon> customFilterButtons = new ArrayList<>();
+    public Map<UIIcon, CustomFilterData> customFilters = new HashMap<>();
+    public CustomFilterData activeCustomFilter;
 
     public UIElement bar;
     public UITextbox search;
     public UIIcon edit;
     public UIIcon close;
+
+    public boolean selectionMode;
+    public Set<String> selectedCategories = new HashSet<>();
 
     private UIFormCategory recent;
     private List<UIFormCategory> categories = new ArrayList<>();
@@ -77,17 +91,20 @@ public class UIFormList extends UIElement
         this.particleButton = new UIIcon(Icons.PARTICLE, (b) -> this.setFilter(FilterCategory.PARTICLE));
         this.extraButton = new UIIcon(Icons.MORE, (b) -> this.setFilter(FilterCategory.EXTRA));
         this.mobButton = new UIIcon(Icons.CHICKEN, (b) -> this.setFilter(FilterCategory.MOB));
+        this.customButton = new UIIcon(Icons.ADD, (b) -> this.openCustomOverlay());
 
         // Make buttons more compact
         this.modelButton.wh(24, 24);
         this.particleButton.wh(24, 24);
         this.extraButton.wh(24, 24);
         this.mobButton.wh(24, 24);
+        this.customButton.wh(24, 24);
 
         this.modelButton.tooltip(UIKeys.FORMS_FILTER_MODEL, Direction.TOP);
         this.particleButton.tooltip(UIKeys.FORMS_FILTER_PARTICLE, Direction.TOP);
         this.extraButton.tooltip(UIKeys.FORMS_FILTER_EXTRA, Direction.TOP);
         this.mobButton.tooltip(UIKeys.FORMS_FILTER_MOB, Direction.TOP);
+        this.customButton.tooltip(UIKeys.FORMS_FILTER_CUSTOM, Direction.TOP);
 
         // Don't set activeColor - let icons keep their normal color when active
         // The glow effect will provide the visual feedback instead
@@ -104,8 +121,9 @@ public class UIFormList extends UIElement
         this.particleButton.relative(this.categoryBar).x(38).y(4).wh(24, 24);
         this.extraButton.relative(this.categoryBar).x(66).y(4).wh(24, 24);
         this.mobButton.relative(this.categoryBar).x(94).y(4).wh(24, 24);
+        this.customButton.relative(this.categoryBar).x(122).y(4).wh(24, 24);
 
-        this.categoryBar.add(this.modelButton, this.particleButton, this.extraButton, this.mobButton);
+        this.categoryBar.add(this.modelButton, this.particleButton, this.extraButton, this.mobButton, this.customButton);
 
         this.bar = new UIElement();
         this.search = new UITextbox(100, this::search).placeholder(UIKeys.FORMS_LIST_SEARCH);
@@ -124,11 +142,116 @@ public class UIFormList extends UIElement
 
         this.markContainer();
         this.setupForms(BBSModClient.getFormCategories());
+
+        for (ValueCustomFilter filterValue : BBSSettings.customFilters.getList())
+        {
+            CustomFilterData data = new CustomFilterData();
+            data.name = filterValue.name.get();
+            data.icon = filterValue.icon.get();
+            data.categories = new ArrayList<>(filterValue.categories.get());
+            
+            this.addCustomFilterUI(data);
+        }
+
+        this.layoutFilterButtons();
     }
 
     private void focusSearch()
     {
         this.search.clickItself();
+    }
+
+    public UIFormList selectionMode()
+    {
+        this.selectionMode = true;
+        this.categoryBar.removeFromParent();
+        this.bar.removeFromParent();
+        this.forms.relative(this).x(0).y(0).w(1F).h(1F);
+
+        for (UIFormCategory category : this.categories)
+        {
+            this.updateCategorySelection(category);
+        }
+
+        return this;
+    }
+
+    private void updateCategorySelection(UIFormCategory category)
+    {
+        category.selectionMode = this.selectionMode;
+        category.setSelected(this.selectedCategories.contains(category.category.title.get()));
+        category.onSelect = (selected) ->
+        {
+            if (selected)
+            {
+                this.selectedCategories.add(category.category.title.get());
+            }
+            else
+            {
+                this.selectedCategories.remove(category.category.title.get());
+            }
+        };
+    }
+
+    private void addCustomFilterUI(CustomFilterData data)
+    {
+        UIIcon icon = new UIIcon(Icons.ICONS.get(data.icon), (b) -> this.setCustomFilter(data, (UIIcon) b));
+        icon.tooltip(IKey.raw(data.name), Direction.TOP);
+        icon.wh(24, 24);
+        icon.relative(this.categoryBar).y(4).wh(24, 24);
+        
+        this.customFilterButtons.add(icon);
+        this.customFilters.put(icon, data);
+    }
+
+    private void openCustomOverlay()
+    {
+        UIOverlay.addOverlay(this.getContext(), new UICustomFormListOverlayPanel((data) ->
+        {
+            ValueCustomFilter value = new ValueCustomFilter("");
+            value.name.set(data.name);
+            value.icon.set(data.icon);
+            value.categories.get().addAll(data.categories);
+            
+            BBSSettings.customFilters.add(value);
+            
+            this.addCustomFilterUI(data);
+            
+            // Re-layout buttons
+            this.layoutFilterButtons();
+        }));
+    }
+
+    private void layoutFilterButtons()
+    {
+        int startX = 132;
+        int x = startX;
+
+        // Move add button to the start of custom section
+        this.customButton.relative(this.categoryBar).x(x).y(4).wh(24, 24);
+        x += 28;
+
+        for (UIIcon icon : this.customFilterButtons)
+        {
+            icon.relative(this.categoryBar).x(x).y(4).wh(24, 24);
+            
+            // Set colors to ensure glow effect matches other icons
+            // Assuming inactive is dim and active is bright (or similar to standard icons)
+            // But since standard icons use defaults (Inactive=White, Active=LightGray),
+            // and user says custom ones DON'T glow like them, maybe custom ones need explicit settings.
+            // However, sticking to defaults is safer if we don't know the magic.
+            // But let's try to set activeColor explicitly if the user claims it's missing.
+            // Actually, let's just make sure they are added to the parent.
+            if (icon.getParent() == null)
+            {
+                this.categoryBar.add(icon);
+            }
+            x += 28;
+        }
+        
+        // Ensure custom button is rendered correctly relative to others
+        // We want custom button to be before custom filters in the list?
+        // Actually, z-order doesn't matter much here.
     }
 
     public void setupForms(FormCategories forms)
@@ -139,6 +262,11 @@ public class UIFormList extends UIElement
         for (FormCategory category : forms.getAllCategories())
         {
             UIFormCategory uiCategory = category.createUI(this);
+
+            if (this.selectionMode)
+            {
+                this.updateCategorySelection(uiCategory);
+            }
 
             this.forms.add(uiCategory);
             this.categories.add(uiCategory);
@@ -201,12 +329,38 @@ public class UIFormList extends UIElement
         this.forms.scroll.clamp();
     }
 
+    private void setCustomFilter(CustomFilterData filter, UIIcon button)
+    {
+        if (this.activeFilter == FilterCategory.CUSTOM && this.activeCustomFilter == filter)
+        {
+            this.activeFilter = FilterCategory.ALL;
+            this.activeCustomFilter = null;
+        }
+        else
+        {
+            this.activeFilter = FilterCategory.CUSTOM;
+            this.activeCustomFilter = filter;
+        }
+
+        this.updateFilterButtons();
+        this.applyFilter();
+
+        // Reset scroll to top when filter changes to avoid blank space
+        this.forms.scroll.setScroll(0);
+        this.forms.scroll.clamp();
+    }
+
     private void updateFilterButtons()
     {
         this.modelButton.active(this.activeFilter == FilterCategory.MODEL);
         this.particleButton.active(this.activeFilter == FilterCategory.PARTICLE);
         this.extraButton.active(this.activeFilter == FilterCategory.EXTRA);
         this.mobButton.active(this.activeFilter == FilterCategory.MOB);
+
+        for (UIIcon icon : this.customFilterButtons)
+        {
+            icon.active(this.activeFilter == FilterCategory.CUSTOM && this.activeCustomFilter == this.customFilters.get(icon));
+        }
     }
 
     private void applyFilter()
@@ -224,6 +378,21 @@ public class UIFormList extends UIElement
                 category.setVisible(true);
                 category.search(currentSearch);
                 visibleCategories.add(category);
+            }
+            else if (this.activeFilter == FilterCategory.CUSTOM)
+            {
+                if (this.activeCustomFilter != null && this.activeCustomFilter.categories.contains(category.category.title.get()))
+                {
+                    category.setVisible(true);
+                    category.category.visible.set(true);
+                    category.search(currentSearch);
+                    visibleCategories.add(category);
+                }
+                else
+                {
+                    category.setVisible(false);
+                    hiddenCategories.add(category);
+                }
             }
             else
             {
@@ -427,6 +596,10 @@ public class UIFormList extends UIElement
                            this.categoryBar.area.ex(), this.categoryBar.area.ey(), 
                            outlineColor);
 
+        // Separator between standard and custom filters
+        int separatorX = this.categoryBar.area.x + 125;
+        context.batcher.box(separatorX, this.categoryBar.area.y + 6, separatorX + 2, this.categoryBar.area.ey() - 6, Colors.WHITE);
+
         // Add glow effect for active filter buttons BEFORE rendering the UI elements
         if (this.activeFilter != FilterCategory.ALL)
         {
@@ -437,6 +610,16 @@ public class UIFormList extends UIElement
                 case PARTICLE: activeButton = this.particleButton; break;
                 case EXTRA: activeButton = this.extraButton; break;
                 case MOB: activeButton = this.mobButton; break;
+                case CUSTOM:
+                    for (Map.Entry<UIIcon, CustomFilterData> entry : this.customFilters.entrySet())
+                    {
+                        if (entry.getValue() == this.activeCustomFilter)
+                        {
+                            activeButton = entry.getKey();
+                            break;
+                        }
+                    }
+                    break;
             }
 
             if (activeButton != null)
