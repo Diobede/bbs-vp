@@ -152,21 +152,21 @@ public class UIFormCategory extends UIElement
     public void search(String search)
     {
         this.search = search.toLowerCase();
-
         this.searched.clear();
 
-        if (search.isEmpty())
+        if (!search.isEmpty())
         {
-            return;
-        }
-
-        for (Form form : this.category.getForms())
-        {
-            if (form.getFormId().toLowerCase().contains(search) || form.getDisplayName().toLowerCase().contains(search))
+            for (Form form : this.category.getForms())
             {
-                this.searched.add(form);
+                if (form.getFormId().toLowerCase().contains(this.search) || 
+                    form.getDisplayName().toLowerCase().contains(this.search))
+                {
+                    this.searched.add(form);
+                }
             }
         }
+
+        this.setupCells();
     }
 
     public List<Form> getForms()
@@ -177,6 +177,51 @@ public class UIFormCategory extends UIElement
         }
 
         return this.searched;
+    }
+
+    public void setVisible(boolean visible)
+    {
+        super.setVisible(visible);
+    }
+
+    public void searchWithFilter(String search, java.util.function.Predicate<Form> filter)
+    {
+        this.search = search;
+
+        this.searched.clear();
+
+        for (Form form : this.category.getForms())
+        {
+            if (!filter.test(form))
+            {
+                continue;
+            }
+
+            if (search.isEmpty())
+            {
+                this.searched.add(form);
+            }
+            else
+            {
+                String name = form.getDisplayName().toLowerCase();
+                String id = form.getFormId().toLowerCase();
+
+                String searchLower = search.toLowerCase();
+
+                if (name.contains(searchLower) || id.contains(searchLower))
+                {
+                    this.searched.add(form);
+                }
+            }
+        }
+
+        this.setupCells();
+    }
+
+    private void setupCells()
+    {
+        // Force the UI to recalculate height by triggering a render update
+        this.last = 0;
     }
 
     @Override
@@ -234,6 +279,23 @@ public class UIFormCategory extends UIElement
     @Override
     public void render(UIContext context)
     {
+        // Don't render anything if the category is not visible
+        if (!this.isVisible())
+        {
+            if (this.last != 0)
+            {
+                this.last = 0;
+                this.h(0);
+
+                UIElement container = this.getParentContainer();
+                if (container != null)
+                {
+                    container.resize();
+                }
+            }
+            return;
+        }
+
         super.render(context);
 
         context.batcher.textCard(this.category.getProcessedTitle(), this.area.x + 26, this.area.y + 6);

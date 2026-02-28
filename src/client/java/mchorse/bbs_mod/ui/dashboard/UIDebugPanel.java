@@ -7,6 +7,8 @@ import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
+import mchorse.bbs_mod.ui.framework.elements.UIDropdown;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.PNGEncoder;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -19,6 +21,8 @@ public class UIDebugPanel extends UIDashboardPanel
 {
     public UIKeyframes keyframes;
     public UIButton button;
+    public UIDropdown dropdown;
+    public UIDropdown singleDropdown;
 
     public UIDebugPanel(UIDashboard dashboard)
     {
@@ -128,7 +132,29 @@ public class UIDebugPanel extends UIDashboardPanel
 
         this.button.relative(this).xy(10, 10).w(80);
 
+        this.dropdown = new UIDropdown(IKey.raw("Multi-Select Options"), (selected) ->
+        {
+            System.out.println("Selected options: " + selected);
+        });
+        this.dropdown.addOption("option1", Icons.BLOCK, IKey.raw("Option 1"));
+        this.dropdown.addOption("option2", Icons.PARTICLE, IKey.raw("Option 2"));
+        this.dropdown.addOption("option3", Icons.SPHERE, IKey.raw("Option 3"));
+        this.dropdown.addOption("option4", Icons.WRENCH, IKey.raw("Option 4"));
+        this.dropdown.addOption("option5", Icons.BOOKMARK, IKey.raw("Option 5"));
+        this.dropdown.relative(this).xy(10, 40).w(250);
+
+        this.singleDropdown = new UIDropdown(IKey.raw("Single Select Options"), (selected) ->
+        {
+            System.out.println("Single selected: " + selected);
+        });
+        this.singleDropdown.singleSelect();
+        this.singleDropdown.addOption("s1", Icons.BLOCK, IKey.raw("Single 1"));
+        this.singleDropdown.addOption("s2", Icons.SPHERE, IKey.raw("Single 2"));
+        this.singleDropdown.addOption("s3", Icons.WRENCH, IKey.raw("Single 3"));
+        this.singleDropdown.relative(this).xy(270, 40).w(250);
+
         this.add(this.button);
+        this.add(this.dropdown, this.singleDropdown);
         // this.add(this.keyframes);
     }
 

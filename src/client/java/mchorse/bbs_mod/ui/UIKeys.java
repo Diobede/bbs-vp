@@ -451,6 +451,14 @@ public class UIKeys
     public static final IKey FORMS_LIST_CONTEXT_FOCUS = L10n.lang("bbs.ui.forms.list.context.focus");
     public static final IKey FORMS_LIST_EDIT = L10n.lang("bbs.ui.forms.list.edit");
     public static final IKey FORMS_LIST_SEARCH = L10n.lang("bbs.ui.forms.list.search");
+    public static final IKey FORMS_FILTER_MODEL = L10n.lang("bbs.ui.forms.filter.model");
+    public static final IKey FORMS_FILTER_PARTICLE = L10n.lang("bbs.ui.forms.filter.particle");
+    public static final IKey FORMS_FILTER_EXTRA = L10n.lang("bbs.ui.forms.filter.extra");
+    public static final IKey FORMS_FILTER_MOB = L10n.lang("bbs.ui.forms.filter.mob");
+    public static final IKey FORMS_LIST_FILTER_MODEL = L10n.lang("bbs.ui.forms.list.filter.model");
+    public static final IKey FORMS_LIST_FILTER_PARTICLE = L10n.lang("bbs.ui.forms.list.filter.particle");
+    public static final IKey FORMS_LIST_FILTER_EXTRA = L10n.lang("bbs.ui.forms.list.filter.extra");
+    public static final IKey FORMS_LIST_FILTER_MOB = L10n.lang("bbs.ui.forms.list.filter.mob");
     public static final IKey FORMS_SHARED_NOTIFICATION = L10n.lang("bbs.ui.forms.categories.shared-notification");
     public static final IKey GENERAL_ADD = L10n.lang("bbs.ui.add");
     public static final IKey GENERAL_CLOSE = L10n.lang("bbs.ui.close");

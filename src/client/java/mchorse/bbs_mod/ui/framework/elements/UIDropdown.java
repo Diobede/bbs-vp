@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * Allows users to select multiple options from a collapsible list.
  * Each option has an icon and a label.
  */
-public class UIMultiSelectDropdown extends UIElement
+public class UIDropdown extends UIElement
 {
     public static class Option
     {
@@ -42,11 +42,12 @@ public class UIMultiSelectDropdown extends UIElement
     private Set<String> selected = new HashSet<>();
     private boolean expanded = false;
     private Consumer<Set<String>> callback;
+    private boolean singleSelect = false;
 
     public static final int HEADER_HEIGHT = 20;
     public static final int OPTION_HEIGHT = 20;
 
-    public UIMultiSelectDropdown(IKey title, Consumer<Set<String>> callback)
+    public UIDropdown(IKey title, Consumer<Set<String>> callback)
     {
         super();
 
@@ -55,7 +56,7 @@ public class UIMultiSelectDropdown extends UIElement
         this.h(HEADER_HEIGHT);
     }
 
-    public UIMultiSelectDropdown addOption(String id, Icon icon, IKey label)
+    public UIDropdown addOption(String id, Icon icon, IKey label)
     {
         this.options.add(new Option(id, icon, label));
         this.updateHeight();
@@ -63,7 +64,14 @@ public class UIMultiSelectDropdown extends UIElement
         return this;
     }
 
-    public UIMultiSelectDropdown setExpanded(boolean expanded)
+    public UIDropdown singleSelect()
+    {
+        this.singleSelect = true;
+        
+        return this;
+    }
+
+    public UIDropdown setExpanded(boolean expanded)
     {
         this.expanded = expanded;
         this.updateHeight();
@@ -81,7 +89,7 @@ public class UIMultiSelectDropdown extends UIElement
         return new HashSet<>(this.selected);
     }
 
-    public UIMultiSelectDropdown setSelected(Set<String> selected)
+    public UIDropdown setSelected(Set<String> selected)
     {
         this.selected.clear();
         this.selected.addAll(selected);
@@ -141,13 +149,23 @@ public class UIMultiSelectDropdown extends UIElement
             {
                 Option option = this.options.get(optionIndex);
 
-                if (this.selected.contains(option.id))
+                if (this.singleSelect)
                 {
-                    this.selected.remove(option.id);
+                    this.selected.clear();
+                    this.selected.add(option.id);
+                    this.expanded = false;
+                    this.updateHeight();
                 }
                 else
                 {
-                    this.selected.add(option.id);
+                    if (this.selected.contains(option.id))
+                    {
+                        this.selected.remove(option.id);
+                    }
+                    else
+                    {
+                        this.selected.add(option.id);
+                    }
                 }
 
                 if (this.callback != null)
@@ -165,70 +183,104 @@ public class UIMultiSelectDropdown extends UIElement
     @Override
     public void render(UIContext context)
     {
-        super.render(context);
-
         FontRenderer font = context.batcher.getFont();
 
-        // Render header background
-        int headerColor = Colors.A100 | 0x444444;
+        // Render header (Textbox style)
+        int h = HEADER_HEIGHT;
+        int x = this.area.x;
+        int y = this.area.y;
+        int w = this.area.w;
 
-        if (this.area.isInside(context) && context.mouseY - this.area.y < HEADER_HEIGHT)
-        {
-            headerColor = Colors.mulRGB(headerColor, 0.85F);
-        }
+        // Background
+        context.batcher.box(x, y, x + w, y + h, 0xff000000);
 
-        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.y + HEADER_HEIGHT, headerColor);
+        // Border
+        int borderColor = this.expanded ? (0xff000000 + BBSSettings.primaryColor.get()) : 0xffaaaaaa;
+        context.batcher.outline(x, y, x + w, y + h, borderColor);
 
         // Render expand/collapse icon
         Icon arrowIcon = this.expanded ? Icons.MOVE_DOWN : Icons.MOVE_UP;
-        context.batcher.icon(arrowIcon, this.area.x + 10, this.area.y + 5, 0.5F, 0F);
+        int iconX = x + w - 16;
+        context.batcher.icon(arrowIcon, iconX, y + 6, 0F, 0F);
 
         // Render title
-        context.batcher.text(this.title.get(), this.area.x + 26, this.area.y + 6, Colors.WHITE, true);
+        String titleText = this.title.get();
+
+        if (this.singleSelect && !this.selected.isEmpty())
+        {
+            String id = this.selected.iterator().next();
+
+            for (Option option : this.options)
+            {
+                if (option.id.equals(id))
+                {
+                    titleText = option.label.get();
+                    break;
+                }
+            }
+        }
+
+        int textY = y + (h - font.getHeight()) / 2;
+        context.batcher.text(titleText, x + 4, textY, Colors.WHITE);
 
         // Render options if expanded
         if (this.expanded)
         {
+            // Background for options
+            int totalOptionsHeight = this.options.size() * OPTION_HEIGHT;
+            context.batcher.box(x, y + h, x + w, y + h + totalOptionsHeight, 0xff000000);
+
+            // Border for options
+            context.batcher.outline(x, y + h, x + w, y + h + totalOptionsHeight, borderColor);
+
             for (int i = 0; i < this.options.size(); i++)
             {
                 Option option = this.options.get(i);
-                int y = this.area.y + HEADER_HEIGHT + i * OPTION_HEIGHT;
+                int optionY = y + h + i * OPTION_HEIGHT;
                 boolean isSelected = this.selected.contains(option.id);
-                boolean isHovered = this.area.isInside(context) && context.mouseY >= y && context.mouseY < y + OPTION_HEIGHT;
+                boolean isHovered = this.area.isInside(context) && context.mouseY >= optionY && context.mouseY < optionY + OPTION_HEIGHT;
 
                 // Render option background
-                int bgColor = isSelected ? (Colors.A50 | BBSSettings.primaryColor.get()) : (Colors.A100 | 0x333333);
+                int bgColor = 0;
+
+                if (isSelected)
+                {
+                    bgColor = Colors.A50 | BBSSettings.primaryColor.get();
+                }
 
                 if (isHovered)
                 {
-                    bgColor = Colors.mulRGB(bgColor, 0.85F);
+                    bgColor = Colors.A25 | 0xffffff;
                 }
 
-                context.batcher.box(this.area.x, y, this.area.ex(), y + OPTION_HEIGHT, bgColor);
+                if (bgColor != 0)
+                {
+                    context.batcher.box(x, optionY, x + w, optionY + OPTION_HEIGHT, bgColor);
+                }
 
                 // Render selection indicator (checkmark or box)
                 if (isSelected)
                 {
-                    context.batcher.icon(Icons.VISIBLE, this.area.x + 6, y + 2, 0F, 0F);
+                    context.batcher.icon(Icons.CHECKMARK_OUTLINE, x + 6, optionY + 2, 0F, 0F);
                 }
                 else
                 {
                     // Render empty checkbox outline
-                    int checkX = this.area.x + 6;
-                    int checkY = y + 2;
-                    context.batcher.outline(checkX, checkY, checkX + 16, checkY + 16, Colors.A100, 1);
+                    context.batcher.icon(Icons.OUTLINE, x + 6, optionY + 2, 0F, 0F);
                 }
 
                 // Render option icon
                 if (option.icon != null)
                 {
-                    context.batcher.icon(option.icon, this.area.x + 28, y + 2, 0F, 0F);
+                    context.batcher.icon(option.icon, x + 28, optionY + 2, 0F, 0F);
                 }
 
                 // Render option label
                 String label = option.label.get();
-                context.batcher.text(label, this.area.x + 48, y + 6, Colors.WHITE, true);
+                context.batcher.text(label, x + 48, optionY + 6, Colors.WHITE, true);
             }
         }
+
+        super.render(context);
     }
 }

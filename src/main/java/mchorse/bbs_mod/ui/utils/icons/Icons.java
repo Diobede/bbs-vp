@@ -98,6 +98,8 @@ public class Icons
     public static final Icon CURVES = register(new Icon(ATLAS, "curves", 192, 64));
     public static final Icon ENVELOPE = register(new Icon(ATLAS, "envelope", 208, 64));
     public static final Icon PLAYER = register(new Icon(ATLAS, "player", 224, 64));
+
+    public static final Icon CHECKMARK_OUTLINE = register(new Icon(ATLAS, "checkmark_outline", 0, 160));
     public static final Icon TRASH = register(new Icon(ATLAS, "trash", 240, 64));
 
     public static final Icon YOUTUBE = register(new Icon(ATLAS, "youtube", 0, 80));
