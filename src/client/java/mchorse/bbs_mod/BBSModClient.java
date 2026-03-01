@@ -568,6 +568,7 @@ public class BBSModClient implements ClientModInitializer
         {
             BBSRendering.setupFramebuffer();
             provider.register(new MinecraftSourcePack());
+            provider.register(new mchorse.bbs_mod.utils.resources.SchematicSourcePack());
 
             Window window = MinecraftClient.getInstance().getWindow();
 

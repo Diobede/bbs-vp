@@ -76,13 +76,34 @@ public class MinecraftSourcePack implements ISourcePack
     @Override
     public boolean hasAsset(Link link)
     {
-        return this.manager.getResource(new Identifier(link.toString())).isPresent();
+        Identifier id = new Identifier(link.toString());
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        if (mc.getServer() != null && mc.getServer().getResourceManager().getResource(id).isPresent())
+        {
+            return true;
+        }
+
+        return this.manager.getResource(id).isPresent();
     }
 
     @Override
     public InputStream getAsset(Link link) throws IOException
     {
-        Optional<Resource> resource = this.manager.getResource(new Identifier(link.toString()));
+        Identifier id = new Identifier(link.toString());
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        if (mc.getServer() != null)
+        {
+            Optional<Resource> resource = mc.getServer().getResourceManager().getResource(id);
+
+            if (resource.isPresent())
+            {
+                return resource.get().getInputStream();
+            }
+        }
+
+        Optional<Resource> resource = this.manager.getResource(id);
 
         if (resource.isPresent())
         {
