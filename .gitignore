@@ -40,3 +40,7 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+
+
+bbs-cml-edition/
+bbs-mod-wiki.wiki/
